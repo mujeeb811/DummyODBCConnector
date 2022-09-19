@@ -102,7 +102,8 @@ void SetConsole(DWORD   cDisplaySize,
 #define PIPE                L'|'
 
 SHORT   gHeight = 80;       // Users screen height
-static WCHAR* resultdata[100];
+static WCHAR* resultdata[100], *sourcecolumn[02], *targetcolumn[02];
+ 
 
     // Allocate an environment
 void createhandle(SQLHENV  hEnv, SQLHDBC   hDbc, SQLHSTMT   hStmt ,bool  source)
@@ -158,9 +159,10 @@ void createhandle(SQLHENV  hEnv, SQLHDBC   hDbc, SQLHSTMT   hStmt ,bool  source)
         SQLAllocHandle(SQL_HANDLE_STMT, hDbc, &hStmt));
 
     wprintf(L"Enter SQL commands, type (control)Z to exit\nSQL COMMAND>");
+
    
     // Loop to get input and execute queries
-
+   
     while (_fgetts(wszInput, SQL_QUERY_SIZE - 1,stdin))
     {
         RETCODE     RetCode;
@@ -177,9 +179,38 @@ void createhandle(SQLHENV  hEnv, SQLHDBC   hDbc, SQLHSTMT   hStmt ,bool  source)
             wprintf(L"SQL COMMAND>");
             continue;
         }
+
+        if (source)
+        {
+            sourcecolumn[0] = L"INT";
+            sourcecolumn[1] = L"VARCHAR";
+        }
+        if (!source && *wszInput == 'C')
+        {
+            for (int i=0; i < 2; i++)
+            {
+                if(wcscmp(sourcecolumn[i],L"INT")==0)
+                {
+                    targetcolumn[i] = L"NUMBER";
+
+                }
+                else if (wcscmp(sourcecolumn[i], L"VARCHAR")==0)
+                {
+                    targetcolumn[i] = L"VARCHAR2(25)";
+                }
+
+
+            }
+            wprintf(L"Mapping sourcecolumns to targetcolumns\n\n %ls\t->\t %ls\n %ls\t->\t %ls \n", sourcecolumn[0], targetcolumn[0], sourcecolumn[1], targetcolumn[1]);
+            swprintf(wszInput, L"CREATE TABLE SHANKAR.ODBCTEST4 (NO %ls, NAME %ls);", targetcolumn[0], targetcolumn[1]);
+            wprintf(L"Creating the target table using query:\n %ls\n", wszInput);
+        }
+           
+
         if (!source && *wszInput == 'T')
         {
-            swprintf(wszInput,L"INSERT INTO SHANKAR.ODBCTEST3 (NAME,GENDER) VALUES('%ls','%ls');", resultdata[0], resultdata[1]);
+            
+            swprintf(wszInput,L"INSERT INTO SHANKAR.ODBCTEST4 (NO,NAME) VALUES(%ls,'%ls');", resultdata[0], resultdata[1]);
             wprintf(L"Transferring the data using query:\n %ls\n", wszInput);
         }
         
